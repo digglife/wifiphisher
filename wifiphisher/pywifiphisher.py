@@ -3,6 +3,8 @@
 # pylint: skip-file
 import subprocess
 import os
+import logging
+import logging.handlers
 import time
 import sys
 import argparse
@@ -31,10 +33,6 @@ import wifiphisher.extensions.handshakeverify as handshakeverify
 # Fixes UnicodeDecodeError for ESSIDs
 reload(sys)
 sys.setdefaultencoding('utf8')
-
-VERSION = "1.3GIT"
-args = 0
-APs = {}  # for listing APs
 
 
 def parse_args():
@@ -132,8 +130,33 @@ def parse_args():
         "-iNM",
         "--no-mac-randomization",
         help=("Do not change any MAC address"), action='store_true')
+    parser.add_argument(
+        "--log-file",
+        help=("Log activity to file"))
 
     return parser.parse_args()
+
+
+VERSION = "1.3GIT"
+args = parse_args()
+APs = {}  # for listing APs
+
+filename = "wifiphisher.log"
+should_roll_over = os.path.isfile(filename)
+logger = logging.getLogger("wifiphisher")
+logger.setLevel(logging.INFO)
+
+if args.log_file:
+    file_handler = logging.handlers.RotatingFileHandler(filename, backupCount=3)
+    # we need to move to new log file on every execution
+    should_roll_over and file_handler.doRollover()
+    file_handler.setLevel(logging.INFO)
+
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+
+logger.info("Starting Wifiphisher")
 
 
 def check_args(args):

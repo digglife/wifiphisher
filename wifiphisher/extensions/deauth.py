@@ -5,8 +5,12 @@ Extension that sends 3 DEAUTH/DISAS Frames:
  1 to the broadcast address
 """
 
+import logging
 import scapy.layers.dot11 as dot11
 import wifiphisher.common.constants as constants
+
+
+logger = logging.getLogger("wifiphisher.deauth")
 
 
 class Deauth(object):
@@ -98,6 +102,8 @@ class Deauth(object):
             try:
                 essid = packet[dot11.Dot11Elt].info.decode("utf8")
             except UnicodeDecodeError:
+                logger.warning("Unable to decode the essid with with bssid {}"
+                               .format(packet.addr3))
                 return False
 
             # only compare essid when -dE is given
@@ -136,6 +142,7 @@ class Deauth(object):
             receiver = packet.addr1
             sender = packet.addr2
         except AttributeError:
+            logger.warning("A malformed packet was discarded") 
             return ([], [])
 
         # obtain the channel for this packet
@@ -150,6 +157,7 @@ class Deauth(object):
             channels.append(str(channel))
         except (TypeError, IndexError):
             # just return empty channel and packet
+            logger.warning("An error happened while extracting the packet's channel")
             return ([], [])
 
         bssid = self._extract_bssid(packet)
