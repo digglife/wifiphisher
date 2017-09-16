@@ -132,7 +132,8 @@ def parse_args():
         help=("Do not change any MAC address"), action='store_true')
     parser.add_argument(
         "--log-file",
-        help=("Log activity to file"))
+        help=("Log activity to file"),
+        action="store_true")
 
     return parser.parse_args()
 
@@ -145,6 +146,7 @@ filename = "wifiphisher.log"
 should_roll_over = os.path.isfile(filename)
 logger = logging.getLogger("wifiphisher")
 logger.setLevel(logging.INFO)
+logger.propagate = False
 
 if args.log_file:
     file_handler = logging.handlers.RotatingFileHandler(filename, backupCount=3)
@@ -652,6 +654,7 @@ class WifiphisherEngine:
 
         # Are you root?
         if os.geteuid():
+            logger.error("Non root user detected")
             sys.exit('[' + R + '-' + W + '] Please run as root')
 
 
@@ -684,6 +687,8 @@ class WifiphisherEngine:
                 else:
                     mon_iface, ap_iface = self.network_manager.get_interface_automatically()
                 # display selected interfaces to the user
+                logger.info("Selecting {} for deauthentication and {} for rouge access point"
+                            .format(mon_iface, ap_iface))
                 print (
                     "[{0}+{1}] Selecting {0}{2}{1} interface for the deauthentication "
                     "attack\n[{0}+{1}] Selecting {0}{3}{1} interface for creating the "
@@ -728,6 +733,7 @@ class WifiphisherEngine:
                     self.network_manager.set_interface_mac_random(ap_iface)
 
             # make sure interfaces are not blocked
+            logger.info("Unblocking interfaces")
             self.network_manager.unblock_interface(ap_iface)
             self.network_manager.unblock_interface(mon_iface)
             # set monitor mode only when --essid is not given
@@ -736,6 +742,7 @@ class WifiphisherEngine:
         except (interfaces.InvalidInterfaceError,
                 interfaces.InterfaceCantBeFoundError,
                 interfaces.InterfaceManagedByNetworkManagerError) as err:
+            logger.exception("Setting {} to monitor mode".format(mon_iface))
             print ("[{0}!{1}] {2}").format(R, W, err)
 
             time.sleep(1)
@@ -743,13 +750,16 @@ class WifiphisherEngine:
 
         if not args.internetinterface:
             kill_interfering_procs()
+            logger.info("Killing all interfering processes")
 
         rogue_ap_mac = self.network_manager.get_interface_mac(ap_iface)
         if not args.no_mac_randomization:
+            logger.info("Changing {} MAC address to {}".format(ap_iface, rouge_ap_mac))
             print "[{0}+{1}] Changing {2} MAC addr (BSSID) to {3}".format(G, W, ap_iface, rogue_ap_mac)
 
             if not self.advanced_enabled():
                 mon_mac = self.network_manager.get_interface_mac(mon_iface)
+                logger.info("Changing {} MAC address to {}".format(mon_iface, mon_mac))
                 print ("[{0}+{1}] Changing {2} MAC addr (BSSID) to {3}".format(G, W, mon_iface, mon_mac))
 
         if self.internet_sharing_enabled():
@@ -793,6 +803,7 @@ class WifiphisherEngine:
         # get the correct template
         tui_template_obj = tui.TuiTemplateSelection()
         template = tui_template_obj.gather_info(args.phishingscenario, self.template_manager)
+        logger.info("Selecting {} template".format(template.get_display_name()))
         print ("[" + G + "+" + W + "] Selecting " +
                template.get_display_name() + " template")
 
