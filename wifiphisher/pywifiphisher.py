@@ -24,8 +24,7 @@ import wifiphisher.common.interfaces as interfaces
 import wifiphisher.common.firewall as firewall
 import wifiphisher.common.accesspoint as accesspoint
 import wifiphisher.common.tui as tui
-import wifiphisher.extensions.handshakeverify as handshakeverify
-
+import wifiphisher.common.opmode_manager as opmode_manager
 
 
 # Fixes UnicodeDecodeError for ESSIDs
@@ -136,82 +135,6 @@ def parse_args():
     return parser.parse_args()
 
 
-def check_args(args):
-    """
-    Checks the given arguments for logic errors.
-    """
-
-    if args.presharedkey and \
-        (len(args.presharedkey) < 8
-         or len(args.presharedkey) > 64):
-        sys.exit(
-            '[' +
-            R +
-            '-' +
-            W +
-            '] Pre-shared key must be between 8 and 63 printable characters.')
-
-    if args.handshake_capture and not os.path.isfile(
-            args.handshake_capture):
-        sys.exit('[' +
-                 R +
-                 '-' +
-                 W +
-                 '] handshake capture does not exist.')
-    elif args.handshake_capture and not handshakeverify.\
-            is_valid_handshake_capture(args.handshake_capture):
-        sys.exit('[' +
-                 R +
-                 '-' +
-                 W +
-                 '] handshake capture does not contain valid handshake')
-
-    if ((args.jamminginterface and not args.apinterface) or
-            (not args.jamminginterface and args.apinterface)) and \
-            not (args.nojamming and args.apinterface):
-        sys.exit(
-            '[' +
-            R +
-            '-' +
-            W +
-            '] --apinterface (-aI) and --jamminginterface (-jI) (or --nojamming (-nJ)) are used in conjuction.')
-
-    if args.nojamming and args.jamminginterface:
-        sys.exit(
-            '[' +
-            R +
-            '-' +
-            W +
-            '] --nojamming (-nJ) and --jamminginterface (-jI) cannot work together.')
-
-    if args.lure10_exploit and args.nojamming:
-        sys.exit(
-            '[' +
-            R +
-            '-' +
-            W +
-            '] --lure10-exploit (-lE) and --nojamming (-nJ) cannot work together.')
-
-    if args.lure10_exploit and not os.path.isfile(
-            LOCS_DIR + args.lure10_exploit):
-        sys.exit('[' +
-                 R +
-                 '-' +
-                 W +
-                 '] Lure10 capture does not exist. Listing directory of captures: ' +
-                 str(os.listdir(LOCS_DIR)))
-
-    if (args.mac_ap_interface and args.no_mac_randomization) or \
-            (args.mac_deauth_interface and args.no_mac_randomization):
-        sys.exit(
-            '[' +
-            R +
-            '-' +
-            W +
-            '] --no-mac-randomization (-iNM) cannot work together with --mac-ap-interface or '
-            '--mac-deauth-interface (-iDM)')
-
-
 def set_ip_fwd():
     """
     Set kernel variables.
@@ -232,6 +155,7 @@ def set_route_localnet():
         stdout=DN,
         stderr=PIPE
     )
+
 
 def kill_interfering_procs():
     """
@@ -281,90 +205,7 @@ class WifiphisherEngine:
         self.access_point = accesspoint.AccessPoint()
         self.fw = firewall.Fw()
         self.em = extensions.ExtensionManager(self.network_manager)
-        self.op_mode = 0x0
-
-    def set_op_mode(self, args):
-        """
-        Sets the operation mode.
-
-        An operation mode resembles how the tool will best leverage
-        the given resources.
-
-        Modes of operation
-        1) Advanced 0x1
-          2 cards, 2 interfaces
-          i) AP, ii) EM
-        2) Advanced and Internet 0x2
-          3 cards, 3 interfaces
-          i) AP, ii) EM iii) Internet
-        3) AP-only and Internet 0x3
-          2 cards, 2 interfaces
-          i) AP, ii) Internet
-        4) AP-only 0x4
-          1 card, 1 interface
-          i) AP
-        5) Advanced w/ 1 vif support AP/Monitor 0x5
-          1 card, 2 interfaces
-          i) AP, ii) Extensions
-        6) Advanced and Internet w/ 1 vif support AP/Monitor 0x6
-          2 cards, 3 interfaces
-          i) AP, ii) Extensions, iii) Internet
-        """
-
-        card, is_single_perfect_card = interfaces.is_add_vif_required(args)
-        if not args.internetinterface and not args.nojamming:
-            if not is_single_perfect_card:
-                self.op_mode = OP_MODE1
-            else:
-                if card is not None:
-                    self.network_manager.add_virtual_interface(card)
-                self.op_mode = OP_MODE5
-        if args.internetinterface and not args.nojamming:
-            if not is_single_perfect_card:
-                self.op_mode = OP_MODE2
-            else:
-                if card is not None:
-                    self.network_manager.add_virtual_interface(card)
-                self.op_mode = OP_MODE6
-        if args.internetinterface and args.nojamming:
-            self.op_mode = OP_MODE3
-        if args.nojamming and not args.internetinterface:
-            self.op_mode = OP_MODE4
-
-    def internet_sharing_enabled(self):
-        """
-        Returns True if we are operating in a mode
-        that shares Internet access.
-        """
-
-        return self.op_mode in [OP_MODE2, OP_MODE3]
-
-    def advanced_enabled(self):
-        """
-        Returns True if we are operating in an advanced
-        mode (a mode that leverages two network cards)
-        """
-
-        return self.op_mode in [OP_MODE1, OP_MODE2, OP_MODE5, OP_MODE6]
-
-    def deauth_enabled(self):
-        """
-        Returns True if we are operating in a mode
-        that deauth is enabled.
-        """
-
-        return self.op_mode in [OP_MODE1, OP_MODE2, OP_MODE5, OP_MODE6]
-
-    def freq_hopping_enabled(self):
-        """
-        Returns True if we are separating the wireless cards
-        for jamming and lunching AP.
-        ..note: MODE5 and MODE6 only use one card to do deauth and
-        lunch ap so it is not allowed to do frequency hopping.
-        """
-
-        return self.op_mode in [OP_MODE1, OP_MODE2]
-
+        self.opmode_manager = opmode_manager.OpModeManager()
 
     def stop(self):
         if DEV:
@@ -397,16 +238,14 @@ class WifiphisherEngine:
         global args, APs
         args = parse_args()
 
-        # Check args
-        check_args(args)
-
+        # Initialize the operation mode manager
+        self.opmode_manager.initialize(args)
         # Set operation mode
-        self.set_op_mode(args)
+        self.opmode_manager.set_op_mode(args, self.network_manager)
 
         # Are you root?
         if os.geteuid():
             sys.exit('[' + R + '-' + W + '] Please run as root')
-
 
         self.network_manager.start()
 
@@ -417,7 +256,7 @@ class WifiphisherEngine:
         # get interfaces for monitor mode and AP mode and set the monitor interface
         # to monitor mode. shutdown on any errors
         try:
-            if self.internet_sharing_enabled():
+            if self.opmode_manager.internet_sharing_enabled():
                 self.network_manager.internet_access_enable = True
                 if self.network_manager.is_interface_valid(
                         args.internetinterface, "internet"):
@@ -425,7 +264,7 @@ class WifiphisherEngine:
                     if interfaces.is_wireless_interface(
                             internet_interface):
                         self.network_manager.unblock_interface(internet_interface)
-            if self.advanced_enabled():
+            if self.opmode_manager.advanced_enabled():
                 if args.jamminginterface and args.apinterface:
                     if self.network_manager.is_interface_valid(
                             args.jamminginterface, "monitor"):
@@ -456,7 +295,7 @@ class WifiphisherEngine:
                     else:
                         self.network_manager.set_interface_mac_random(
                             mon_iface)
-            if not self.deauth_enabled():
+            if not self.opmode_manager.deauth_enabled():
                 if args.apinterface:
                     if self.network_manager.is_interface_valid(
                             args.apinterface, "AP"):
@@ -484,7 +323,7 @@ class WifiphisherEngine:
             self.network_manager.unblock_interface(ap_iface)
             self.network_manager.unblock_interface(mon_iface)
             # set monitor mode only when --essid is not given
-            if self.advanced_enabled() or args.essid is None:
+            if self.opmode_manager.advanced_enabled() or args.essid is None:
                 self.network_manager.set_interface_mode(mon_iface, "monitor")
         except (interfaces.InvalidInterfaceError,
                 interfaces.InterfaceCantBeFoundError,
@@ -501,11 +340,11 @@ class WifiphisherEngine:
         if not args.no_mac_randomization:
             print "[{0}+{1}] Changing {2} MAC addr (BSSID) to {3}".format(G, W, ap_iface, rogue_ap_mac)
 
-            if not self.advanced_enabled():
+            if not self.opmode_manager.advanced_enabled():
                 mon_mac = self.network_manager.get_interface_mac(mon_iface)
                 print ("[{0}+{1}] Changing {2} MAC addr (BSSID) to {3}".format(G, W, mon_iface, mon_mac))
 
-        if self.internet_sharing_enabled():
+        if self.opmode_manager.internet_sharing_enabled():
             self.fw.nat(ap_iface, args.internetinterface)
             set_ip_fwd()
         else:
@@ -608,7 +447,7 @@ class WifiphisherEngine:
         self.access_point.set_essid(essid)
         if args.presharedkey:
             self.access_point.set_psk(args.presharedkey)
-        if self.internet_sharing_enabled():
+        if self.opmode_manager.internet_sharing_enabled():
             self.access_point.set_internet_interface(args.internetinterface)
         print '[' + T + '*' + W + '] Starting the fake access point...'
         try:
@@ -618,9 +457,9 @@ class WifiphisherEngine:
             self.stop()
         # If are on Advanced mode, start Extension Manager (EM)
         # We need to start EM before we boot the web server
-        if self.advanced_enabled():
+        if self.opmode_manager.advanced_enabled():
             shared_data = {
-                'is_freq_hop_allowed': self.freq_hopping_enabled(),
+                'is_freq_hop_allowed': self.opmode_manager.freq_hopping_enabled(),
                 'target_ap_channel': channel or "",
                 'target_ap_essid': essid or "",
                 'target_ap_bssid': target_ap_mac or "",
@@ -642,7 +481,7 @@ class WifiphisherEngine:
             self.em.init_extensions(shared_data)
             self.em.start_extensions()
         # With configured DHCP, we may now start the web server
-        if not self.internet_sharing_enabled():
+        if not self.opmode_manager.internet_sharing_enabled():
             # Start HTTP server in a background thread
             print '[' + T + '*' + W + '] Starting HTTP/HTTPS server at ports ' + str(PORT) + ", " + str(SSL_PORT)
             webserver = Thread(target=phishinghttp.runHTTPServer,
