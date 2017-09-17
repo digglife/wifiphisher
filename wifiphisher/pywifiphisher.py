@@ -754,7 +754,7 @@ class WifiphisherEngine:
 
         rogue_ap_mac = self.network_manager.get_interface_mac(ap_iface)
         if not args.no_mac_randomization:
-            logger.info("Changing {} MAC address to {}".format(ap_iface, rouge_ap_mac))
+            logger.info("Changing {} MAC address to {}".format(ap_iface, rogue_ap_mac))
             print "[{0}+{1}] Changing {2} MAC addr (BSSID) to {3}".format(G, W, ap_iface, rogue_ap_mac)
 
             if not self.advanced_enabled():
