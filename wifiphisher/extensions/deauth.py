@@ -10,7 +10,7 @@ import scapy.layers.dot11 as dot11
 import wifiphisher.common.constants as constants
 
 
-logger = logging.getLogger("wifiphisher.deauth")
+logger = logging.getLogger(__name__)
 
 
 class Deauth(object):
@@ -142,7 +142,7 @@ class Deauth(object):
             receiver = packet.addr1
             sender = packet.addr2
         except AttributeError:
-            logger.warning("A malformed packet was discarded") 
+            logger.warning("A malformed packet was discarded")
             return ([], [])
 
         # obtain the channel for this packet

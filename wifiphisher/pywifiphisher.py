@@ -4,7 +4,7 @@
 import subprocess
 import os
 import logging
-import logging.handlers
+import logging.config
 import time
 import sys
 import argparse
@@ -27,7 +27,6 @@ import wifiphisher.common.firewall as firewall
 import wifiphisher.common.accesspoint as accesspoint
 import wifiphisher.common.tui as tui
 import wifiphisher.extensions.handshakeverify as handshakeverify
-
 
 
 # Fixes UnicodeDecodeError for ESSIDs
@@ -142,23 +141,24 @@ VERSION = "1.3GIT"
 args = parse_args()
 APs = {}  # for listing APs
 
-filename = "wifiphisher.log"
-should_roll_over = os.path.isfile(filename)
-logger = logging.getLogger("wifiphisher")
-logger.setLevel(logging.INFO)
-logger.propagate = False
 
-if args.log_file:
-    file_handler = logging.handlers.RotatingFileHandler(filename, backupCount=3)
-    # we need to move to new log file on every execution
-    should_roll_over and file_handler.doRollover()
-    file_handler.setLevel(logging.INFO)
-
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-
-logger.info("Starting Wifiphisher")
+def setup_logging(args):
+    """
+    Setup the logging configurations
+    """
+    root_logger = logging.getLogger()
+    root_logger.disable = True
+    # logging setup
+    logger = logging.getLogger(__name__)
+    if args.log_file:
+        logging.config.dictConfig(LOGGING_CONFIG)
+        should_roll_over = False
+        # use root logger to rotate the log file
+        if os.path.getsize(LOG_FILEPATH) > 0:
+            should_roll_over = os.path.isfile(LOG_FILEPATH)
+        should_roll_over and root_logger.handlers[0].doRollover()
+        logger.info("Starting Wifiphisher")
+    return logger
 
 
 def check_args(args):
@@ -167,8 +167,8 @@ def check_args(args):
     """
 
     if args.presharedkey and \
-        (len(args.presharedkey) < 8
-         or len(args.presharedkey) > 64):
+        (len(args.presharedkey) < 8 or
+            len(args.presharedkey) > 64):
         sys.exit(
             '[' +
             R +
@@ -614,7 +614,6 @@ class WifiphisherEngine:
 
         return self.op_mode in [OP_MODE1, OP_MODE2]
 
-
     def stop(self):
         if DEV:
             print "[" + G + "+" + W + "] Show your support!"
@@ -649,6 +648,9 @@ class WifiphisherEngine:
         # Check args
         check_args(args)
 
+        # setup the logging configuration
+        logger = setup_logging(args)
+
         # Set operation mode
         self.set_op_mode(args)
 
@@ -656,7 +658,6 @@ class WifiphisherEngine:
         if os.geteuid():
             logger.error("Non root user detected")
             sys.exit('[' + R + '-' + W + '] Please run as root')
-
 
         self.network_manager.start()
 
