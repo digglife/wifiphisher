@@ -142,7 +142,7 @@ class Deauth(object):
             receiver = packet.addr1
             sender = packet.addr2
         except AttributeError:
-            logger.warning("A malformed packet was discarded")
+            logger.debug("malformed frame doesn't contain address fields")
             return ([], [])
 
         # obtain the channel for this packet
@@ -157,7 +157,7 @@ class Deauth(object):
             channels.append(str(channel))
         except (TypeError, IndexError):
             # just return empty channel and packet
-            logger.warning("An error happened while extracting the packet's channel")
+            logger.debug("malformed frame doesn't contain channel field")
             return ([], [])
 
         bssid = self._extract_bssid(packet)
@@ -169,6 +169,7 @@ class Deauth(object):
             packets_to_send += self._craft_packet(bssid,
                                                   constants.WIFI_BROADCAST,
                                                   bssid)
+            logger.info("Target deauth BSSID found: {0}".format(bssid))
             self._deauth_bssids.add(bssid)
 
         if bssid not in self._deauth_bssids:

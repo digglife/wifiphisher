@@ -622,6 +622,7 @@ class WifiphisherEngine:
             print "[" + G + "+" + W + "] Like us: https://www.facebook.com/Wifiphisher"
         print "[" + G + "+" + W + "] Captured credentials:"
         for cred in phishinghttp.creds:
+            logger.info("creds: %s", cred)
             print cred
 
         # EM depends on Network Manager.
@@ -646,11 +647,11 @@ class WifiphisherEngine:
         global args, APs
         args = parse_args()
 
-        # Check args
-        check_args(args)
-
         # setup the logging configuration
         setup_logging(args)
+
+        # Check args
+        check_args(args)
 
         # Set operation mode
         self.set_op_mode(args)
@@ -677,6 +678,8 @@ class WifiphisherEngine:
                     if interfaces.is_wireless_interface(
                             internet_interface):
                         self.network_manager.unblock_interface(internet_interface)
+                logger.info("Selecting %s interface for accessing internet",
+                            args.internetinterface)
             if self.advanced_enabled():
                 if args.jamminginterface and args.apinterface:
                     if self.network_manager.is_interface_valid(
@@ -730,6 +733,8 @@ class WifiphisherEngine:
                     "[{0}+{1}] Selecting {0}{2}{1} interface for creating the "
                     "rogue Access Point").format(
                     G, W, ap_iface)
+                logger.info("Selecting {} interface for rouge access point"
+                            .format(ap_iface))
                 # randomize the mac addresses
                 if not args.no_mac_randomization:
                     self.network_manager.set_interface_mac_random(ap_iface)
@@ -758,8 +763,7 @@ class WifiphisherEngine:
         if not args.no_mac_randomization:
             logger.info("Changing {} MAC address to {}".format(ap_iface, rogue_ap_mac))
             print "[{0}+{1}] Changing {2} MAC addr (BSSID) to {3}".format(G, W, ap_iface, rogue_ap_mac)
-
-            if not self.advanced_enabled():
+            if self.advanced_enabled():
                 mon_mac = self.network_manager.get_interface_mac(mon_iface)
                 logger.info("Changing {} MAC address to {}".format(mon_iface, mon_mac))
                 print ("[{0}+{1}] Changing {2} MAC addr (BSSID) to {3}".format(G, W, mon_iface, mon_mac))
