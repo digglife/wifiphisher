@@ -29,6 +29,8 @@ import wifiphisher.common.tui as tui
 import wifiphisher.extensions.handshakeverify as handshakeverify
 
 
+logger = logging.getLogger(__name__)
+
 # Fixes UnicodeDecodeError for ESSIDs
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -147,9 +149,7 @@ def setup_logging(args):
     Setup the logging configurations
     """
     root_logger = logging.getLogger()
-    root_logger.disable = True
     # logging setup
-    logger = logging.getLogger(__name__)
     if args.log_file:
         logging.config.dictConfig(LOGGING_CONFIG)
         should_roll_over = False
@@ -158,7 +158,8 @@ def setup_logging(args):
             should_roll_over = os.path.isfile(LOG_FILEPATH)
         should_roll_over and root_logger.handlers[0].doRollover()
         logger.info("Starting Wifiphisher")
-    return logger
+    else:
+        root_logger.addHandler(logging.NullHandler())
 
 
 def check_args(args):
@@ -649,7 +650,7 @@ class WifiphisherEngine:
         check_args(args)
 
         # setup the logging configuration
-        logger = setup_logging(args)
+        setup_logging(args)
 
         # Set operation mode
         self.set_op_mode(args)

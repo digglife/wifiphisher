@@ -88,7 +88,7 @@ T = '\033[93m'   # tan
 # Logging configurations
 # possible values for debug levels are:
 # CRITICAL, ERROR, WARNING, INFO, DEBUG, NOTSET
-DEBUG_LEVEL = 'INFO'
+LOG_LEVEL = 'INFO'
 LOG_FILEPATH = 'wifiphisher.log'
 LOGGING_CONFIG = {
     'version': 1,
@@ -96,7 +96,7 @@ LOGGING_CONFIG = {
     'handlers': {
         'file': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'level': DEBUG_LEVEL,
+            'level': LOG_LEVEL,
             'formatter': 'detailed',
             'filename': LOG_FILEPATH,
             'backupCount': 3,
